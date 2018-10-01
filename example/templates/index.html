@@ -59,10 +59,15 @@
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a
             // variety of ways
-            $('form#emit').submit(function(event) {
-                socket.emit('web_to_local_event', {data: $('#emit_data').val()});
+            $('form#emit2local').submit(function(event) {
+                socket.emit('web_to_local_event', {data: $('#emit2local_data').val()});
                 return false;
             });
+            $('form#emit').submit(function(event) {
+                socket.emit('web_event', {data: $('#emit_data').val()});
+                return false;
+            });
+
             $('form#disconnect').submit(function(event) {
                 socket.emit('disconnect_request');
                 return false;
@@ -76,7 +81,11 @@
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
-    <form id="emit" method="POST" action='#'>
+    <form id="emit2local" method="POST" action='#'>
+        <input type="text" name="emit_data" id="emit2local_data" placeholder="Message">
+        <input type="submit" value="Echo Local">
+    </form>
+        <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
     </form>

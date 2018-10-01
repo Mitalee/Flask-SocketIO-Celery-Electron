@@ -20,7 +20,7 @@ def background_thread():
     """Example of how to send server generated events to clients."""
     count = 0
     while True:
-        socketio.sleep(10)
+        socketio.sleep(60)
         count += 1
         socketio.emit('my_response',
                       {'data': 'Server generated event', 'count': count},
@@ -37,9 +37,9 @@ def test_web_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in web_event')
     emit('web_response',
-         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
+         {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('web_to_local_event', namespace='/test_web')
+@socketio.on('web_to_local_event')
 def test_web_to_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in web2local event')
@@ -52,9 +52,9 @@ def test_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in local_event')
     emit('local_response',
-         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_local')
+         {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('local_to_web_event', namespace='/test_local')
+@socketio.on('local_to_web_event')
 def test_local_to_web_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in local2web event')
@@ -91,8 +91,8 @@ def test_connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(target=background_thread)
-    emit('web_response', {'data': 'Connected', 'count': 0})
-
+    #emit('web_response', {'data': 'Connected', 'count': 0})
+    print('web connected: '+request.sid)
 
 @socketio.on('disconnect', namespace='/test_web')
 def test_web_disconnect():

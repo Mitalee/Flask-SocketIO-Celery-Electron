@@ -20,11 +20,11 @@ def background_thread():
     """Example of how to send server generated events to clients."""
     count = 0
     while True:
-        socketio.sleep(60)
+        socketio.sleep(10)
         count += 1
-        socketio.emit('my_response',
+        socketio.emit('local_response',
                       {'data': 'Server generated event', 'count': count},
-                      namespace='/test')
+                      namespace='/test_local')
 
 
 @app.route('/')
@@ -35,30 +35,30 @@ def index():
 @socketio.on('web_event', namespace='/test_web')
 def test_web_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in web_event')
+    print('in web_event with message: ', message)
     emit('web_response',
          {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('web_to_local_event')
+@socketio.on('web_to_local_event', namespace='/test_web')
 def test_web_to_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in web2local event')
-    emit('local_response',
+    print('in web2local event: ', message)
+    socketio.emit('local_response',
          {'data': message['data'], 'count': session['receive_count']}, namespace='/test_local')
 
 
 @socketio.on('local_event', namespace='/test_local')
 def test_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in local_event')
+    print('in local_event: ', message)
     emit('local_response',
          {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('local_to_web_event')
+@socketio.on('local_to_web_event', namespace='/test_local')
 def test_local_to_web_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in local2web event')
-    emit('web_response',
+    print('in local2web event: ', message)
+    socketio.emit('web_response',
          {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
 
 
@@ -104,13 +104,21 @@ def test_local_connect():
     with thread_lock:
         if thread is None:
             thread = socketio.start_background_task(target=background_thread)
-    emit('local_response', {'data': 'Connected', 'count': 0})
+    #emit('local_response', {'data': 'Connected', 'count': 0})
+    print('local connected: '+request.sid)
 
 
 @socketio.on('disconnect', namespace='/test_local')
 def test_local_disconnect():
     print('Client disconnected', request.sid)
 
+@socketio.on_error('/test_web') # handles the '/chat' namespace
+def error_handler_chat(e):
+    print('error ',e)
+
+@socketio.on_error('/test_local') # handles the '/chat' namespace
+def error_handler_chat(e):
+    print('error ',e)
 
 
 if __name__ == '__main__':

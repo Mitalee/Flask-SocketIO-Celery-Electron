@@ -81,9 +81,9 @@ def test_web_to_local_message():
     data = request.get_json()
     print('in web2local event: ', data['message'])
     print('in web2local function')
-   # session['receive_count'] = session.get('receive_count', 0) + 1 
-    #emit('local_response',
-    #     {'data': data['message'], 'count': session['receive_count']}, namespace='/test_local', room=current_user.id)
+    session['receive_count'] = session.get('receive_count', 0) + 1 
+    emit('local_response',
+         {'data': data['message'], 'count': session['receive_count']}, namespace='/test_local', room=current_user.id)
     return jsonify({'result': 'ok'})
 
 

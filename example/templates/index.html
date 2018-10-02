@@ -89,7 +89,23 @@
             // variety of ways
 
         }; //end of namespace
+        function Echo2Local() {
+            $.ajax({
+                type: 'POST',
+                url: '/web2local',
+                data: JSON.stringify({'message': $('#emit2local_data').val()}),
+                contentType: 'application/json',
+                error: function (request, status, error) {
+                    console.log(arguments);
+                    alert(" Can't do because: " + error);
+                    alert(status);
+                },
+                success: function (response) {
+                    alert(response['result']);
+                }
+            });
 
+        };
         function loginUser() {
           // alert($('#http-user-set').val());
             $.ajax({
@@ -138,14 +154,14 @@
             <button type="button" onclick="logoutUser()" id="logout-http">Logout</button>
         </p>
     </div>
-  <!--  <button id="startSocket" onclick="startSocket()"> Connect to socket</button>
+    <!--<button id="startSocket" onclick="startSocket()"> Connect to socket</button>
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
-    <form id="emit2local" method="POST" action='#'>
+    <form id="emit2local" method="POST" action="Echo2Local()">-->
         <input type="text" name="emit2local_data" id="emit2local_data" placeholder="Message">
-        <input type="submit" value="Echo Local">
-    </form>
+        <input type="submit" onclick="Echo2Local()" value="Echo Local">
+    <!--</form>
         <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
@@ -166,11 +182,11 @@
     <form id="close" method="POST" action="#">
         <input type="text" name="close_room" id="close_room" placeholder="Room Name">
         <input type="submit" value="Close Room">
-    </form>
+    </form>-->
     <form id="disconnect" method="POST" action="#">
         <input type="submit" value="Disconnect">
     </form>
     <h2>Receive:</h2>
-    <div id="log"></div>-->
+    <div id="log"></div>
 </body>
 </html>

@@ -23,7 +23,7 @@ thread_lock = Lock()
 
 class User(UserMixin, object):
     def __init__(self, id=None):
-        print('in class User')
+        print('in class User: ', id)
         self.id = id
 
 def background_thread():
@@ -59,6 +59,7 @@ def session_access():
     elif 'user' in data:
         if data['user']:
             login_user(User(data['user']))
+            print('current user is: ', current_user)
             return jsonify({
             'sessionid': session.sid,
             'user': current_user.id
@@ -73,19 +74,17 @@ def session_access():
         })
     return 'dunno', 204
 
-@socketio.on('web_event', namespace='/test_web')
-def test_web_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in web_event with message: ', message)
-    emit('web_response',
-         {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('web_to_local_event', namespace='/test_web')
-def test_web_to_local_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in web2local event: ', message)
-    emit('local_response',
-         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_local')
+#@socketio.on('web_to_local_event', namespace='/test_web')
+@app.route('/web2local', methods=['GET','POST'])
+def test_web_to_local_message():
+    data = request.get_json()
+    print('in web2local event: ', data['message'])
+    print('in web2local function')
+   # session['receive_count'] = session.get('receive_count', 0) + 1 
+    #emit('local_response',
+    #     {'data': data['message'], 'count': session['receive_count']}, namespace='/test_local', room=current_user.id)
+    return jsonify({'result': 'ok'})
 
 
 @socketio.on('local_event', namespace='/test_local')
@@ -95,20 +94,13 @@ def test_local_message(message):
     emit('local_response',
          {'data': message['data'], 'count': session['receive_count']})
 
-@socketio.on('local_to_web_event', namespace='/test_local')
-def test_local_to_web_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in local2web event: ', message)
-    emit('web_response',
-         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
+# @socketio.on('local_to_web_event', namespace='/test_local')
+# def test_local_to_web_message(message):
+#     session['receive_count'] = session.get('receive_count', 0) + 1
+#     print('in local2web event: ', message)
+#     emit('web_response',
+#          {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
 
-
-@socketio.on('disconnect_request', namespace='/test_web')
-def web_disconnect_request():
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('web_response',
-         {'data': 'Disconnected!', 'count': session['receive_count']})
-    disconnect()
 
 @socketio.on('disconnect_request', namespace='/test_local')
 def local_disconnect_request():
@@ -117,102 +109,19 @@ def local_disconnect_request():
          {'data': 'Disconnected!', 'count': session['receive_count']})
     disconnect()
 
-@socketio.on('my_web_ping', namespace='/test_web')
-def ping_pong_web():
-    emit('my_web_pong')
-
-@socketio.on('my_local_ping', namespace='/test_local')
-def ping_pong_local():
-    emit('my_local_pong')
-
-
-@socketio.on('connect', namespace='/test_web')
-def test_connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(target=background_thread)
-    #emit('web_response', {'data': 'Connected', 'count': 0})
-    print('web connected: '+request.sid)
-
-@socketio.on('disconnect', namespace='/test_web')
-def test_web_disconnect():
-    print('Client disconnected', request.sid)
-
-@socketio.on('connect', namespace='/test_local')
-def test_local_connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(target=background_thread)
-    #emit('local_response', {'data': 'Connected', 'count': 0})
-    print('local connected: '+request.sid)
-
 
 @socketio.on('disconnect', namespace='/test_local')
 def test_local_disconnect():
     print('Client disconnected', request.sid)
 
-@socketio.on_error('/test_web') # handles the '/chat' namespace
-def error_handler_chat(e):
-    print('error ',e)
-
-@socketio.on_error('/test_local') # handles the '/chat' namespace
-def error_handler_chat(e):
-    print('error ',e)
-
-
-
-@socketio.on('join', namespace='/test_web')
-def join(message):
-    join_room(message['room'])
-    print('in join function app.pu')
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('web_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
-
 @socketio.on('join', namespace='/test_local')
 def join(message):
     join_room(message['room'])
-    print('in join function app.pu')
+    print('in join function app.y, joined: ', message['room'])
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('local_response',
          {'data': 'In rooms: ' + ', '.join(rooms()),
           'count': session['receive_count']})
-
-
-@socketio.on('leave', namespace='/test_web')
-def leave(message):
-    leave_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('web_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
-
-@socketio.on('leave', namespace='/test_local')
-def leave(message):
-    leave_room(message['room'])
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('local_response',
-         {'data': 'In rooms: ' + ', '.join(rooms()),
-          'count': session['receive_count']})
-
-@socketio.on('close_room', namespace='/test_web')
-def close(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('web_response', {'data': 'Room ' + message['room'] + ' is closing.',
-                         'count': session['receive_count']},
-         room=message['room'])
-    close_room(message['room'])
-
-
-@socketio.on('my_room_event', namespace='/test_local')
-def send_room_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('web_response',
-         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web', 
-         room=message['room'])
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

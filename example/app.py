@@ -104,7 +104,7 @@ def test_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in local_event: ', message)
     emit('local_response',
-         {'data': message['data'], 'count': 'from_server'+str(session['receive_count'])})
+         {'data': message['data'], 'count': session['receive_count']})
 
 @socketio.on('local_to_web_event', namespace='/test_local')
 def test_local_to_web_message(message):

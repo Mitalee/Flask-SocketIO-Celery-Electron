@@ -9,7 +9,7 @@ app.config['SECRET_KEY'] = 'top-secret!'
 app.config['SESSION_TYPE'] = 'filesystem'
 login = LoginManager(app)
 Session(app)
-socketio = SocketIO(app, manage_session=False)
+socketio = SocketIO(app, manage_session=True)
 
 
 class User(UserMixin, object):

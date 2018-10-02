@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Flask-SocketIO Test</title>
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
         function startSocket() {
@@ -41,7 +41,22 @@
                 socket.emit('web_event', {data: $('#emit_data').val()});
                 return false;
             });
-
+            $('form#join').submit(function(event) {
+                socket.emit('join', {room: $('#join_room').val()});
+                return false;
+            });
+            $('form#leave').submit(function(event) {
+                socket.emit('leave', {room: $('#leave_room').val()});
+                return false;
+            });
+            $('form#send_room').submit(function(event) {
+                socket.emit('my_room_event', {room: $('#room_name').val(), data: $('#room_data').val()});
+                return false;
+            });
+            $('form#close').submit(function(event) {
+                socket.emit('close_room', {room: $('#close_room').val()});
+                return false;
+            });
             $('form#disconnect').submit(function(event) {
                 socket.emit('disconnect_request');
                 return false;
@@ -73,12 +88,57 @@
             // These accept data from the user and send it to the server in a
             // variety of ways
 
+        }; //end of namespace
+
+        function loginUser() {
+          // alert($('#http-user-set').val());
+            $.ajax({
+                type: 'POST',
+                url: '/session',
+                data: JSON.stringify({user: $('#http-user-set').val()}),
+                contentType: 'application/json',
+                error: function (request, error) {
+                    console.log(arguments);
+                    alert(" Can't do because: " + error);
+                },
+                success: function (response) {
+                    $('#http-user').text(response['user']);
+                    $('#http-session').text(response['sessionid']);
+                }
+            });
         };
-    </script>
+        function logoutUser(){
+            $.ajax({
+                type: 'POST',
+                url: '/session',
+                data: JSON.stringify({user: null}),
+                contentType: 'application/json',
+                error: function (request, error) {
+                    console.log(arguments);
+                    alert(" Can't do because: " + error);
+                },
+                success: function(response) {
+                    $('#http-user').text(response['user']);
+                    $('#http-session').text(response['sessionid']);
+                }
+            });
+        };
+</script>
 </head>
 <body>
     <h1>Flask-SocketIO Test</h1>
-    <button id="startSocket" onclick="startSocket()"> Connect to socket</button>
+    <div><h3>User</h3></div>
+    <div>
+        <p>Current session: <b><span id="http-session"></span></b></p>
+        <p>
+        <p>Current user: <b><span id="http-user"></span></b></p>
+        <p>
+            <input type=text id='http-user-set' placeholder="User to login...">
+            <button type="button" onclick="loginUser()" id="login-http">Login</button>
+            <button type="button" onclick="logoutUser()" id="logout-http">Logout</button>
+        </p>
+    </div>
+  <!--  <button id="startSocket" onclick="startSocket()"> Connect to socket</button>
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
@@ -90,10 +150,27 @@
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">
         <input type="submit" value="Echo">
     </form>
+    <form id="join" method="POST" action='#'>
+        <input type="text" name="join_room" id="join_room" placeholder="Room Name">
+        <input type="submit" value="Join Room">
+    </form>
+    <form id="leave" method="POST" action='#'>
+        <input type="text" name="leave_room" id="leave_room" placeholder="Room Name">
+        <input type="submit" value="Leave Room">
+    </form>
+    <form id="send_room" method="POST" action='#'>
+        <input type="text" name="room_name" id="room_name" placeholder="Room Name">
+        <input type="text" name="room_data" id="room_data" placeholder="Message">
+        <input type="submit" value="Send to Room">
+    </form>
+    <form id="close" method="POST" action="#">
+        <input type="text" name="close_room" id="close_room" placeholder="Room Name">
+        <input type="submit" value="Close Room">
+    </form>
     <form id="disconnect" method="POST" action="#">
         <input type="submit" value="Disconnect">
     </form>
     <h2>Receive:</h2>
-    <div id="log"></div>
+    <div id="log"></div>-->
 </body>
 </html>

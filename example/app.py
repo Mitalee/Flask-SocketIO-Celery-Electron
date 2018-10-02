@@ -60,14 +60,14 @@ def session_access():
         if data['user']:
             login_user(User(data['user']))
             return jsonify({
-            'sessionid': session.get('value', 'null'),
+            'sessionid': session.sid,
             'user': current_user.id
                 if current_user.is_authenticated else 'anonymous'
         })
         else:
             logout_user()
             return jsonify({
-            'sessionid': session.get('value', 'nil'),
+            'sessionid': session.sid,
             'user': current_user.id
                 if current_user.is_authenticated else 'anonymous'
         })

@@ -92,7 +92,14 @@ def test_local_message(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     print('in local_event: ', message)
     emit('local_response',
-         {'data': message['data'], 'count': session['receive_count']})
+         {'data': message['data'], 'count': 'from_server'+session['receive_count']})
+
+@socketio.on('local_to_web_event', namespace='/test_local')
+def test_local_to_web_message(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    print('in local2web event: ', message)
+    emit('web_response',
+         {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
 
 # @socketio.on('local_to_web_event', namespace='/test_local')
 # def test_local_to_web_message(message):
@@ -101,7 +108,7 @@ def test_local_message(message):
 #     emit('web_response',
 #          {'data': message['data'], 'count': session['receive_count']}, namespace='/test_web')
 
-
+#To disconnect the desktop local client
 @socketio.on('disconnect_request', namespace='/test_local')
 def local_disconnect_request():
     session['receive_count'] = session.get('receive_count', 0) + 1
@@ -110,10 +117,11 @@ def local_disconnect_request():
     disconnect()
 
 
-@socketio.on('disconnect', namespace='/test_local')
-def test_local_disconnect():
-    print('Client disconnected', request.sid)
+# @socketio.on('disconnect', namespace='/test_local')
+# def test_local_disconnect():
+#     print('Client disconnected', request.sid)
 
+#To allow desktop local client to access the user session (currently by username)
 @socketio.on('join', namespace='/test_local')
 def join(message):
     join_room(message['room'])

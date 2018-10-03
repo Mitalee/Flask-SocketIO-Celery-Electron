@@ -5,30 +5,30 @@ Allowing a celery worker to emit websocket messages to an electron desktop app. 
 
 Used a combination of namespaces and rooms to identify the desktop client.
 
-CELERY:
-`
-$ source venv/bin/activate
+CELERY:<br />
+```
+$ source venv/bin/activate 
 (venv) $ celery worker -A app.celery --loglevel=info
-`
+```
 
-REDIS:
-```python
+REDIS:<br>
+```
 ./run-redis.sh
-
+```
 FLASK:
-```python
+```
 $ source venv/bin/activate
 (venv) $ python app.py
-
+```
 ![alt text](https://github.com/Mitalee/Flask-SocketIO-Celery-Electron/blob/master/Demo.png)
 
 
-Miguel's Tutorials:
-https://blog.miguelgrinberg.com/post/using-celery-with-flask
-https://blog.miguelgrinberg.com/post/easy-websockets-with-flask-and-gevent/page/10
+Miguel's Tutorials:<br />
+https://blog.miguelgrinberg.com/post/using-celery-with-flask <br />
+https://blog.miguelgrinberg.com/post/easy-websockets-with-flask-and-gevent/page/10 <br />
 
-Flask-SocketIO documentation:
+Flask-SocketIO documentation:<br />
 https://flask-socketio.readthedocs.io/en/latest/
 
-Electron Links:
+Electron Links:<br />
 https://github.com/electron/electron-api-demos

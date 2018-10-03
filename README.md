@@ -6,10 +6,10 @@ Allowing a celery worker to emit websocket messages to an electron desktop app. 
 Used a combination of namespaces and rooms to identify the desktop client.
 
 CELERY:
-```python
+`
 $ source venv/bin/activate
 (venv) $ celery worker -A app.celery --loglevel=info
-```
+`
 
 REDIS:
 ```python

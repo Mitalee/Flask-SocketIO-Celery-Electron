@@ -154,16 +154,17 @@ def leave(message):
           'count': session['receive_count']})
 
 @celery.task(bind=False)
-def long_task():
+def long_task(user_id):
     for i in range(5):
         d = 'number'+str(i)
         socketio.emit('local_response',
-         {'data': d, 'count': '0901'}, namespace='/test_local', room='abc')
+         {'data': d, 'count': '0901'}, namespace='/test_local', room=user_id)
         time.sleep(2)
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
-    task = long_task.apply_async()
+    print('in longtask with user_id: ', current_user.id)
+    task = long_task.delay(user_id=current_user.id)
     return jsonify({}), 202, {'Location':'xyz'}
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ from flask_login import LoginManager, UserMixin, current_user, login_user, \
 from flask_session import Session
 
 from celery import Celery
-import time
+import time, random
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
@@ -35,7 +35,6 @@ celery.conf.update(app.config)
 
 class User(UserMixin, object):
     def __init__(self, id=None):
-        print('in class User: ', id)
         self.id = id
 
 def background_thread():
@@ -124,7 +123,7 @@ def test_local_to_web_message(message):
 @socketio.on('disconnect_request', namespace='/test_local')
 def local_disconnect_request():
     session['receive_count'] = session.get('receive_count', 0) + 1
-    print('in disconnect_request')
+    #print('in disconnect_request')
     emit('local_response',
          {'data': 'Disconnected!', 'count': session['receive_count']})
     print('emitted from disconnect')
@@ -153,19 +152,86 @@ def leave(message):
          {'data': 'In rooms: ' + ', '.join(rooms()),
           'count': session['receive_count']})
 
-@celery.task(bind=False)
-def long_task(user_id):
-    for i in range(5):
+@celery.task(bind=True)
+def long_task(self, user_id):
+    total = random.randint(5, 10)
+    for i in range(total):
         d = 'number'+str(i)
+        message=''
         socketio.emit('local_response',
          {'data': d, 'count': '0901'}, namespace='/test_local', room=user_id)
+
+        self.update_state(state='PROGRESS',
+                          meta={'current': i, 'total': total,
+                                'status': message})
         time.sleep(2)
+
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': 42}
 
 @app.route('/longtask', methods=['POST'])
 def longtask():
     print('in longtask with user_id: ', current_user.id)
     task = long_task.delay(user_id=current_user.id)
-    return jsonify({}), 202, {'Location':'xyz'}
+    return jsonify({}), 202, {'Location': url_for('taskstatus',
+                                                  task_id=task.id)}
+
+# @celery.task(bind=True)
+# def long_task(self, user_id):
+#     """Background task that runs a long function with progress reports."""
+#     verb = ['Starting up', 'Booting', 'Repairing', 'Loading', 'Checking']
+#     adjective = ['master', 'radiant', 'silent', 'harmonic', 'fast']
+#     noun = ['solar array', 'particle reshaper', 'cosmic ray', 'orbiter', 'bit']
+#     message = ''
+#     total = random.randint(10, 50)
+#     for i in range(total):
+#         if not message or random.random() < 0.25:
+#             message = '{0} {1} {2}...'.format(random.choice(verb),
+#                                               random.choice(adjective),
+#                                               random.choice(noun))
+#         self.update_state(state='PROGRESS',
+#                           meta={'current': i, 'total': total,
+#                                 'status': message})
+#         time.sleep(1)
+#     return {'current': 100, 'total': 100, 'status': 'Task completed!',
+#             'result': 42}
+
+# @app.route('/longtask', methods=['POST'])
+# def longtask():
+#     task = long_task.apply_async()
+#     return jsonify({}), 202, {'Location': url_for('taskstatus',
+#                                                   task_id=task.id)}
+
+
+@app.route('/status/<task_id>')
+def taskstatus(task_id):
+    task = long_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return jsonify(response)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

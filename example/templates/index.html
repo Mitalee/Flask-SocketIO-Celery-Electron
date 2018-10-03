@@ -2,7 +2,15 @@
 <html>
 <head>
     <title>Flask-SocketIO Test</title>
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+    <style>
+        .progress {
+            width: 80%;
+            text-align: center;
+            margin: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+   <!-- <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>-->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script type="text/javascript" charset="utf-8">
       /* function startSocket() {
@@ -139,7 +147,7 @@
                 }
             });
         };
-        function sendLongTask(){
+        /*function sendLongTask(){
             $.ajax({
                 type: 'POST',
                 url: '/longtask',
@@ -152,7 +160,7 @@
                     alert('Unexpected error');
                 }
             });
-        };
+        };*/
 </script>
 </head>
 <body>
@@ -175,6 +183,7 @@
     <form id="emit2local" method="POST" action="Echo2Local()">-->
         <input type="text" name="emit2local_data" id="emit2local_data" placeholder="Message">
         <input type="submit" onclick="Echo2Local()" value="Echo Local">
+        <br />
         <input type="submit" onclick="sendLongTask()" value="Send Long Task">
     <!--</form>
         <form id="emit" method="POST" action='#'>
@@ -199,9 +208,73 @@
         <input type="submit" value="Close Room">
     </form>
     <form id="disconnect" method="POST" action="#">
-        <input type="submit" value="Disconnect">-->
-    </form>
+        <input type="submit" value="Disconnect">
+    </form>-->
+    <br>
+    <button id="start-bg-job">Start Long Calculation</button><br><br>
+    <div id="container"></div>
     <h2>Receive:</h2>
     <div id="log"></div>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script>
+        function start_long_task() {
+            // add task status elements
+            progress_div = $('<div class="progress"><div class="progress-bar progress-bar-striped active"></div></div>');
+            data_div = $('<div class="progress_status"><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
+            $('#container').append(progress_div);
+            $('#container').append(data_div);
+
+            // create a progress bar
+           /* var nanobar = new Nanobar({
+               bg: '#44f',
+               target: div[0].childNodes[0]
+            });*/
+
+            // send ajax POST request to start background job
+            $.ajax({
+                type: 'POST',
+                url: '/longtask',
+                success: function(data, status, request) {
+                    status_url = request.getResponseHeader('Location');
+                    //update_progress(status_url, nanobar, div[0]);
+                    update_progress(status_url, data_div[0]);
+                },
+                error: function() {
+                    alert('Unexpected error');
+                }
+            });
+        }
+        function update_progress(status_url, status_div) {
+            // send GET request to status URL
+            $.getJSON(status_url, function(data) {
+                // update UI
+                //console.log(data);
+                percent = parseInt(data['current'] * 100 / data['total']);
+                //nanobar.go(percent);
+                $(".progress-bar").css("width", percent + "%").text(percent + " %");
+                $(status_div.childNodes[0]).text(data['current']);
+                $(status_div.childNodes[1]).text(data['status']);
+                if (data['state'] != 'PENDING' && data['state'] != 'PROGRESS') {
+                    if ('result' in data) {
+                        // show result
+                        $(status_div.childNodes[2]).text('Result: ' + data['result']);
+                    }
+                    else {
+                        // something unexpected happened
+                        $(status_div.childNodes[2]).text('Result: ' + data['state']);
+                    }
+                }
+                else {
+                    // rerun in 2 seconds
+                    setTimeout(function() {
+                        update_progress(status_url, status_div);
+                    }, 1000);
+                }
+            });
+        }
+        $(function() {
+            $('#start-bg-job').click(start_long_task);
+        });
+    </script>
 </body>
 </html>

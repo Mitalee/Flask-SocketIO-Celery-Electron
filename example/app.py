@@ -28,6 +28,9 @@ thread_lock = Lock()
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 
+ # for socketio
+import eventlet
+eventlet.monkey_patch()
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config.get('CELERY_BROKER_URL'))
@@ -162,7 +165,7 @@ def long_task(self, user_id):
          {'data': d, 'count': '0901'}, namespace='/test_local', room=user_id)
 
         self.update_state(state='PROGRESS',
-                          meta={'current': i, 'total': total,
+                          meta={'current': d, 'total': total,
                                 'status': message})
         time.sleep(2)
 

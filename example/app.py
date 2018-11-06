@@ -18,35 +18,40 @@ CELERY_TASK_LIST = [
     'tasks',
 ]
 
-def create_celery_app(app=None):
-    """
-    Create a new Celery object and tie together the Celery config to the app's
-    config. Wrap all tasks in the context of the application.
+celery = Celery(__name__, broker='redis://localhost:6379/0', include=CELERY_TASK_LIST)
 
-    :param app: Flask app
-    :return: Celery app
-    """
-    app = app or create_app()
+# def create_celery_app(app=None):
+#     """
+#     Create a new Celery object and tie together the Celery config to the app's
+#     config. Wrap all tasks in the context of the application.
 
-    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'],
-                    include=CELERY_TASK_LIST)
-    celery.conf.update(app.config)
-    TaskBase = celery.Task
+#     :param app: Flask app
+#     :return: Celery app
+#     """
+#     app = app or create_app()
 
-    class ContextTask(TaskBase):
-        abstract = True
+#     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'],
+#                     include=CELERY_TASK_LIST)
+#     celery.conf.update(app.config)
+#     TaskBase = celery.Task
 
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
+#     class ContextTask(TaskBase):
+#         abstract = True
 
-    celery.Task = ContextTask
-    return celery
+#         def __call__(self, *args, **kwargs):
+#             with app.app_context():
+#                 return TaskBase.__call__(self, *args, **kwargs)
 
-def create_app(debug=False):
+#     celery.Task = ContextTask
+#     return celery
+
+def create_app():
     """Create an application."""
     app = Flask(__name__)
-    app.debug = debug
+    #app.config.from_object(config[config_name])
+    #config[config_name].init_app(app)
+    #app.debug = debug
+
     #app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
 
     #from .main import main as main_blueprint
@@ -77,7 +82,7 @@ def create_app(debug=False):
     socketio = SocketIO(app, logger=True, engineio_logger=True, message_queue=app.config['CELERY_BROKER_URL'])
 
     # Initialize Celery
-    celery = Celery(__name__, broker='redis://localhost:6379/0', include=CELERY_TASK_LIST)
+    #celery = Celery(__name__, broker='redis://localhost:6379/0', include=CELERY_TASK_LIST)
     celery.conf.update(app.config)
 
     class User(UserMixin, object):

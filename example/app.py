@@ -9,7 +9,7 @@ from flask_login import LoginManager, UserMixin, current_user, login_user, \
 from flask_session import Session
 
 from celery import Celery
-import time, random
+
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
@@ -18,7 +18,8 @@ async_mode = None
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['SESSION_TYPE'] = 'filesystem'
-socketio = SocketIO(app, async_mode=async_mode, message_queue='redis://localhost:6379/0')
+#socketio = SocketIO(app, async_mode=async_mode, message_queue='redis://localhost:6379/0')
+
 login = LoginManager(app)
 Session(app)
 thread = None
@@ -28,12 +29,17 @@ thread_lock = Lock()
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 
+CELERY_TASK_LIST = [
+    'tasks',
+]
+
  # for socketio
 import eventlet
 eventlet.monkey_patch()
+socketio = SocketIO(app, logger=True, engineio_logger=True, async_mode='eventlet', message_queue=app.config['CELERY_BROKER_URL'])
 
 # Initialize Celery
-celery = Celery(app.name, broker=app.config.get('CELERY_BROKER_URL'))
+celery = Celery(app.name, broker=app.config.get('CELERY_BROKER_URL'), include=CELERY_TASK_LIST)
 celery.conf.update(app.config)
 
 class User(UserMixin, object):
@@ -129,6 +135,7 @@ def local_disconnect_request():
     #print('in disconnect_request')
     emit('local_response',
          {'data': 'Disconnected!', 'count': session['receive_count']})
+    socketio.sleep(0)
     print('emitted from disconnect')
     disconnect()
 
@@ -155,27 +162,11 @@ def leave(message):
          {'data': 'In rooms: ' + ', '.join(rooms()),
           'count': session['receive_count']})
 
-@celery.task(bind=True)
-def long_task(self, user_id):
-    total = random.randint(5, 10)
-    for i in range(total):
-        d = 'number'+str(i)
-        message=''
-        socketio.emit('local_response',
-         {'data': d, 'count': '0901'}, namespace='/test_local', room=user_id)
-
-        self.update_state(state='PROGRESS',
-                          meta={'current': d, 'total': total,
-                                'status': message})
-        time.sleep(2)
-
-    return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
-
 @app.route('/longtask', methods=['POST'])
 def longtask():
-    print('in longtask with user_id: ', current_user.id)
-    task = long_task.delay(user_id=current_user.id)
+    print('IN LONGTASK WITH USER_ID: ', current_user.id)
+    from tasks import long_background_task
+    task = long_background_task.delay(user_id=current_user.id)
     return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
 
@@ -208,7 +199,8 @@ def longtask():
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
-    task = long_task.AsyncResult(task_id)
+    from tasks import long_background_task
+    task = long_background_task.AsyncResult(task_id)
     if task.state == 'PENDING':
         response = {
             'state': task.state,

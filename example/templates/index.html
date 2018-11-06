@@ -109,7 +109,7 @@
                     alert(status);
                 },
                 success: function (response) {
-                    alert(response['result']);
+                    console.log(response['result']);
                 }
             });
 
@@ -171,7 +171,7 @@
         <p>
         <p>Current user: <b><span id="http-user"></span></b></p>
         <p>
-            <input type=text id='http-user-set' placeholder="User to login...">
+            <input type=text id='http-user-set' value="abc">
             <button type="button" onclick="loginUser()" id="login-http">Login</button>
             <button type="button" onclick="logoutUser()" id="logout-http">Logout</button>
         </p>

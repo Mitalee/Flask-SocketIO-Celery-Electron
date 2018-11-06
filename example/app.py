@@ -36,7 +36,7 @@ CELERY_TASK_LIST = [
  # for socketio
 import eventlet
 eventlet.monkey_patch()
-socketio = SocketIO(app, logger=True, engineio_logger=True, async_mode='eventlet', message_queue=app.config['CELERY_BROKER_URL'])
+socketio = SocketIO(app, logger=True, engineio_logger=True, message_queue=app.config['CELERY_BROKER_URL'])
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config.get('CELERY_BROKER_URL'), include=CELERY_TASK_LIST)
@@ -228,5 +228,5 @@ def taskstatus(task_id):
     return jsonify(response)
 
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+# if __name__ == '__main__':
+#     socketio.run(app, debug=True)
